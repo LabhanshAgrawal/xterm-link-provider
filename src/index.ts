@@ -40,7 +40,7 @@ export const computeLink = (
 ): ILink[] => {
   const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
 
-  const [line, startLineIndex] = translateBufferLineToStringWithWrap(y - 1, false, terminal);
+  const [line, startLineIndex] = translateBufferLineToStringWithWrap(y - 1, terminal);
 
   let match;
   let stringIndex = -1;
@@ -85,7 +85,6 @@ export const computeLink = (
  */
 const translateBufferLineToStringWithWrap = (
   lineIndex: number,
-  trimRight: boolean,
   terminal: Terminal
 ): [string, number] => {
   let lineString = '';
@@ -114,7 +113,7 @@ const translateBufferLineToStringWithWrap = (
     if (!line) {
       break;
     }
-    lineString += line.translateToString(!lineWrapsToNext && trimRight).substring(0, terminal.cols);
+    lineString += line.translateToString().substring(0, terminal.cols);
     lineIndex++;
   } while (lineWrapsToNext);
 
