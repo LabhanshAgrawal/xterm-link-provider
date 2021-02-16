@@ -1,4 +1,4 @@
-import {ILinkProvider, ILink, Terminal, IViewportRange} from 'xterm';
+import type {ILinkProvider, ILink, Terminal, IViewportRange, IBufferCellPosition} from 'xterm';
 
 interface ILinkProviderOptions {
   hover?(event: MouseEvent, text: string, location: IViewportRange): void;
@@ -71,23 +71,13 @@ export class LinkComputer {
         break;
       }
 
-      let endX = stringIndex + text.length;
-      let endY = startLineIndex + 1;
-
-      while (endX > terminal.cols) {
-        endX -= terminal.cols;
-        endY++;
-      }
-
       const range = {
-        start: {
-          x: stringIndex + 1,
-          y: startLineIndex + 1
-        },
-        end: {
-          x: endX,
-          y: endY
-        }
+        start: LinkComputer._stringIndexToBufferPosition(terminal, startLineIndex, stringIndex),
+        end: LinkComputer._stringIndexToBufferPosition(
+          terminal,
+          startLineIndex,
+          stringIndex + text.length - 1
+        )
       };
 
       result.push({range, text, activate: handler});
@@ -140,5 +130,30 @@ export class LinkComputer {
     } while (lineWrapsToNext);
 
     return [lineString, startLineIndex];
+  }
+
+  private static _stringIndexToBufferPosition(
+    terminal: Terminal,
+    lineIndex: number,
+    stringIndex: number
+  ): IBufferCellPosition {
+    const cell = terminal.buffer.active.getNullCell();
+    while (stringIndex) {
+      const line = terminal.buffer.active.getLine(lineIndex);
+      if (!line) {
+        return {x: 0, y: 0};
+      }
+      const length = line.length;
+      for (let i = 0; i < length; ) {
+        line.getCell(i, cell);
+        stringIndex -= cell.getChars().length;
+        if (stringIndex < 0) {
+          return {x: i + 1, y: lineIndex + 1};
+        }
+        i += cell.getWidth();
+      }
+      lineIndex++;
+    }
+    return {x: 1, y: lineIndex + 1};
   }
 }
