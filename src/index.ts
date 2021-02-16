@@ -14,7 +14,7 @@ export class LinkProvider implements ILinkProvider {
   ) {}
 
   public provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void {
-    const links = LinkComputer.computeLink(y, this._regex, this._terminal, this._handler);
+    const links = computeLink(y, this._regex, this._terminal, this._handler);
     callback(this._addCallbacks(links));
   }
 
@@ -32,128 +32,116 @@ export class LinkProvider implements ILinkProvider {
   }
 }
 
-export class LinkComputer {
-  public static computeLink(
-    y: number,
-    regex: RegExp,
-    terminal: Terminal,
-    handler: (event: MouseEvent, uri: string) => void
-  ): ILink[] {
-    const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
+export function computeLink(
+  y: number,
+  regex: RegExp,
+  terminal: Terminal,
+  handler: (event: MouseEvent, uri: string) => void
+): ILink[] {
+  const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
 
-    const [line, startLineIndex] = LinkComputer._translateBufferLineToStringWithWrap(
-      y - 1,
-      false,
-      terminal
-    );
+  const [line, startLineIndex] = _translateBufferLineToStringWithWrap(y - 1, false, terminal);
 
-    let match;
-    let stringIndex = -1;
-    const result: ILink[] = [];
+  let match;
+  let stringIndex = -1;
+  const result: ILink[] = [];
 
-    while ((match = rex.exec(line)) !== null) {
-      const text = match[1];
-      if (!text) {
-        // something matched but does not comply with the given matchIndex
-        // since this is most likely a bug the regex itself we simply do nothing here
-        console.log('match found without corresponding matchIndex');
-        break;
-      }
+  while ((match = rex.exec(line)) !== null) {
+    const text = match[1];
+    if (!text) {
+      // something matched but does not comply with the given matchIndex
+      // since this is most likely a bug the regex itself we simply do nothing here
+      console.log('match found without corresponding matchIndex');
+      break;
+    }
 
-      // Get index, match.index is for the outer match which includes negated chars
-      // therefore we cannot use match.index directly, instead we search the position
-      // of the match group in text again
-      // also correct regex and string search offsets for the next loop run
-      stringIndex = line.indexOf(text, stringIndex + 1);
-      rex.lastIndex = stringIndex + text.length;
+    // Get index, match.index is for the outer match which includes negated chars
+    // therefore we cannot use match.index directly, instead we search the position
+    // of the match group in text again
+    // also correct regex and string search offsets for the next loop run
+    stringIndex = line.indexOf(text, stringIndex + 1);
+    rex.lastIndex = stringIndex + text.length;
+    if (stringIndex < 0) {
+      // invalid stringIndex (should not have happened)
+      break;
+    }
+
+    const range = {
+      start: _stringIndexToBufferPosition(terminal, startLineIndex, stringIndex),
+      end: _stringIndexToBufferPosition(terminal, startLineIndex, stringIndex + text.length - 1)
+    };
+
+    result.push({range, text, activate: handler});
+  }
+
+  return result;
+}
+
+/**
+ * Gets the entire line for the buffer line
+ * @param line The line being translated.
+ * @param trimRight Whether to trim whitespace to the right.
+ * @param terminal The terminal
+ */
+function _translateBufferLineToStringWithWrap(
+  lineIndex: number,
+  trimRight: boolean,
+  terminal: Terminal
+): [string, number] {
+  let lineString = '';
+  let lineWrapsToNext: boolean;
+  let prevLinesToWrap: boolean;
+
+  do {
+    const line = terminal.buffer.active.getLine(lineIndex);
+    if (!line) {
+      break;
+    }
+
+    if (line.isWrapped) {
+      lineIndex--;
+    }
+
+    prevLinesToWrap = line.isWrapped;
+  } while (prevLinesToWrap);
+
+  const startLineIndex = lineIndex;
+
+  do {
+    const nextLine = terminal.buffer.active.getLine(lineIndex + 1);
+    lineWrapsToNext = nextLine ? nextLine.isWrapped : false;
+    const line = terminal.buffer.active.getLine(lineIndex);
+    if (!line) {
+      break;
+    }
+    lineString += line.translateToString(!lineWrapsToNext && trimRight).substring(0, terminal.cols);
+    lineIndex++;
+  } while (lineWrapsToNext);
+
+  return [lineString, startLineIndex];
+}
+
+function _stringIndexToBufferPosition(
+  terminal: Terminal,
+  lineIndex: number,
+  stringIndex: number
+): IBufferCellPosition {
+  const cell = terminal.buffer.active.getNullCell();
+  while (stringIndex) {
+    const line = terminal.buffer.active.getLine(lineIndex);
+    if (!line) {
+      return {x: 0, y: 0};
+    }
+    const length = line.length;
+    for (let i = 0; i < length; ) {
+      line.getCell(i, cell);
+      stringIndex -= cell.getChars().length;
       if (stringIndex < 0) {
-        // invalid stringIndex (should not have happened)
-        break;
+        return {x: i + 1, y: lineIndex + 1};
       }
-
-      const range = {
-        start: LinkComputer._stringIndexToBufferPosition(terminal, startLineIndex, stringIndex),
-        end: LinkComputer._stringIndexToBufferPosition(
-          terminal,
-          startLineIndex,
-          stringIndex + text.length - 1
-        )
-      };
-
-      result.push({range, text, activate: handler});
+      i += cell.getWidth();
     }
-
-    return result;
+    lineIndex++;
   }
-
-  /**
-   * Gets the entire line for the buffer line
-   * @param line The line being translated.
-   * @param trimRight Whether to trim whitespace to the right.
-   * @param terminal The terminal
-   */
-  private static _translateBufferLineToStringWithWrap(
-    lineIndex: number,
-    trimRight: boolean,
-    terminal: Terminal
-  ): [string, number] {
-    let lineString = '';
-    let lineWrapsToNext: boolean;
-    let prevLinesToWrap: boolean;
-
-    do {
-      const line = terminal.buffer.active.getLine(lineIndex);
-      if (!line) {
-        break;
-      }
-
-      if (line.isWrapped) {
-        lineIndex--;
-      }
-
-      prevLinesToWrap = line.isWrapped;
-    } while (prevLinesToWrap);
-
-    const startLineIndex = lineIndex;
-
-    do {
-      const nextLine = terminal.buffer.active.getLine(lineIndex + 1);
-      lineWrapsToNext = nextLine ? nextLine.isWrapped : false;
-      const line = terminal.buffer.active.getLine(lineIndex);
-      if (!line) {
-        break;
-      }
-      lineString += line
-        .translateToString(!lineWrapsToNext && trimRight)
-        .substring(0, terminal.cols);
-      lineIndex++;
-    } while (lineWrapsToNext);
-
-    return [lineString, startLineIndex];
-  }
-
-  private static _stringIndexToBufferPosition(
-    terminal: Terminal,
-    lineIndex: number,
-    stringIndex: number
-  ): IBufferCellPosition {
-    const cell = terminal.buffer.active.getNullCell();
-    while (stringIndex) {
-      const line = terminal.buffer.active.getLine(lineIndex);
-      if (!line) {
-        return {x: 0, y: 0};
-      }
-      const length = line.length;
-      for (let i = 0; i < length; ) {
-        line.getCell(i, cell);
-        stringIndex -= cell.getChars().length;
-        if (stringIndex < 0) {
-          return {x: i + 1, y: lineIndex + 1};
-        }
-        i += cell.getWidth();
-      }
-      lineIndex++;
-    }
-    return {x: 1, y: lineIndex + 1};
-  }
+  return {x: 1, y: lineIndex + 1};
 }
