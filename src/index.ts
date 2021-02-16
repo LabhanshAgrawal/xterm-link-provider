@@ -32,15 +32,15 @@ export class LinkProvider implements ILinkProvider {
   }
 }
 
-export function computeLink(
+export const computeLink = (
   y: number,
   regex: RegExp,
   terminal: Terminal,
   handler: (event: MouseEvent, uri: string) => void
-): ILink[] {
+): ILink[] => {
   const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
 
-  const [line, startLineIndex] = _translateBufferLineToStringWithWrap(y - 1, false, terminal);
+  const [line, startLineIndex] = translateBufferLineToStringWithWrap(y - 1, false, terminal);
 
   let match;
   let stringIndex = -1;
@@ -67,15 +67,15 @@ export function computeLink(
     }
 
     const range = {
-      start: _stringIndexToBufferPosition(terminal, startLineIndex, stringIndex),
-      end: _stringIndexToBufferPosition(terminal, startLineIndex, stringIndex + text.length - 1)
+      start: stringIndexToBufferPosition(terminal, startLineIndex, stringIndex),
+      end: stringIndexToBufferPosition(terminal, startLineIndex, stringIndex + text.length - 1)
     };
 
     result.push({range, text, activate: handler});
   }
 
   return result;
-}
+};
 
 /**
  * Gets the entire line for the buffer line
@@ -83,11 +83,11 @@ export function computeLink(
  * @param trimRight Whether to trim whitespace to the right.
  * @param terminal The terminal
  */
-function _translateBufferLineToStringWithWrap(
+const translateBufferLineToStringWithWrap = (
   lineIndex: number,
   trimRight: boolean,
   terminal: Terminal
-): [string, number] {
+): [string, number] => {
   let lineString = '';
   let lineWrapsToNext: boolean;
   let prevLinesToWrap: boolean;
@@ -119,13 +119,13 @@ function _translateBufferLineToStringWithWrap(
   } while (lineWrapsToNext);
 
   return [lineString, startLineIndex];
-}
+};
 
-function _stringIndexToBufferPosition(
+const stringIndexToBufferPosition = (
   terminal: Terminal,
   lineIndex: number,
   stringIndex: number
-): IBufferCellPosition {
+): IBufferCellPosition => {
   const cell = terminal.buffer.active.getNullCell();
   while (stringIndex) {
     const line = terminal.buffer.active.getLine(lineIndex);
@@ -144,4 +144,4 @@ function _stringIndexToBufferPosition(
     lineIndex++;
   }
   return {x: 1, y: lineIndex + 1};
-}
+};
