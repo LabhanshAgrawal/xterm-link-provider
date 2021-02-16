@@ -1,11 +1,6 @@
 import type {IBufferCellPosition, ILink, ILinkDecorations, ILinkProvider, Terminal} from 'xterm';
 
-interface ILinkProviderOptions {
-  hover?: (event: MouseEvent, text: string) => void;
-  leave?: (event: MouseEvent, text: string) => void;
-  dispose?: () => void;
-  decorations?: ILinkDecorations;
-}
+type ILinkProviderOptions = Omit<ILink, 'range' | 'text' | 'activate'>;
 
 export class LinkProvider implements ILinkProvider {
   /**
@@ -28,10 +23,7 @@ export class LinkProvider implements ILinkProvider {
         range: _link.range,
         text: _link.text,
         activate: this._handler,
-        decorations: this._options.decorations,
-        dispose: this._options.dispose,
-        hover: this._options.hover,
-        leave: this._options.leave
+        ...this._options
       })
     );
     callback(links);
