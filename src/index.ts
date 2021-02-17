@@ -138,7 +138,8 @@ const stringIndexToBufferPosition = (
     const length = line.length;
     for (let i = 0; i < length; ) {
       line.getCell(i, cell);
-      stringIndex -= cell.getChars().length;
+      // empty cells are reported as ' ' (space) in translateToString
+      stringIndex -= cell.getChars().length || 1;
       if (stringIndex < 0) {
         return {x: i + (reportLastCell ? cell.getWidth() : 1), y: lineIndex + 1};
       }
