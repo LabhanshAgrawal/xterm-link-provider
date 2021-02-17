@@ -36,7 +36,13 @@ export class LinkProvider implements ILinkProvider {
  * @param terminal The terminal instance
  */
 export const computeLink = (y: number, regex: RegExp, terminal: Terminal) => {
-  const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
+  const rex = new RegExp(
+    regex.source,
+    ((regex.flags || '') + 'g')
+      .split('')
+      .filter((value, index, arr) => arr.indexOf(value) === index)
+      .join('')
+  );
 
   const [line, startLineIndex] = translateBufferLineToStringWithWrap(y - 1, terminal);
 
