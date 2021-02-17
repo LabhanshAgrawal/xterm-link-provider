@@ -15,7 +15,7 @@ import {LinkProvider} from 'xterm-link-provider';
 
 // print clicked emojis to console
 
-emojiRegex = /\p{Emoji_Presentation}/gu
+const emojiRegex = /(\p{Emoji_Presentation}+)/gu
 
 terminal.registerLinkProvider(
   new LinkProvider(
