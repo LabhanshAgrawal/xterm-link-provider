@@ -72,7 +72,12 @@ export const computeLink = (y: number, regex: RegExp, terminal: Terminal) => {
 
     const range = {
       start: stringIndexToBufferPosition(terminal, startLineIndex, stringIndex),
-      end: stringIndexToBufferPosition(terminal, startLineIndex, stringIndex + text.length - 1)
+      end: stringIndexToBufferPosition(
+        terminal,
+        startLineIndex,
+        stringIndex + text.length - 1,
+        true
+      )
     };
 
     result.push({range, text});
@@ -121,7 +126,8 @@ const translateBufferLineToStringWithWrap = (
 const stringIndexToBufferPosition = (
   terminal: Terminal,
   lineIndex: number,
-  stringIndex: number
+  stringIndex: number,
+  reportLastCell = false
 ): IBufferCellPosition => {
   const cell = terminal.buffer.active.getNullCell();
   while (stringIndex) {
@@ -134,7 +140,7 @@ const stringIndexToBufferPosition = (
       line.getCell(i, cell);
       stringIndex -= cell.getChars().length;
       if (stringIndex < 0) {
-        return {x: i + 1, y: lineIndex + 1};
+        return {x: i + (reportLastCell ? cell.getWidth() : 1), y: lineIndex + 1};
       }
       i += cell.getWidth();
     }
