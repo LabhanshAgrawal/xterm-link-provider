@@ -116,7 +116,7 @@ const translateBufferLineToStringWithWrap = (
     if (!line) {
       break;
     }
-    lineString += line.translateToString().substring(0, terminal.cols);
+    lineString += line.translateToString(true).substring(0, terminal.cols);
     lineIndex++;
   } while (lineWrapsToNext);
 
@@ -138,8 +138,7 @@ const stringIndexToBufferPosition = (
     const length = line.length;
     for (let i = 0; i < length; ) {
       line.getCell(i, cell);
-      // empty cells are reported as ' ' (space) in translateToString
-      stringIndex -= cell.getChars().length || 1;
+      stringIndex -= cell.getChars().length;
       if (stringIndex < 0) {
         return {x: i + (reportLastCell ? cell.getWidth() : 1), y: lineIndex + 1};
       }
