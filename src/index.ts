@@ -9,16 +9,18 @@ export class LinkProvider implements ILinkProvider {
    * @param _regex The regular expression to use for matching
    * @param _handler Callback for when link is clicked
    * @param _options Further hooks, eg. hover, leave and decorations
+   * @param _matchIndex The index to use from regexp.exec result, default 1
    */
   constructor(
     private readonly _terminal: Terminal,
     private readonly _regex: RegExp,
     private readonly _handler: ILink['activate'],
-    private readonly _options: ILinkProviderOptions = {}
+    private readonly _options: ILinkProviderOptions = {},
+    private readonly _matchIndex = 1
   ) {}
 
   public provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void {
-    const links = computeLink(y, this._regex, this._terminal).map(
+    const links = computeLink(y, this._regex, this._terminal, this._matchIndex).map(
       (_link): ILink => ({
         range: _link.range,
         text: _link.text,
@@ -34,8 +36,9 @@ export class LinkProvider implements ILinkProvider {
  * @param y The line number to process
  * @param regex The regular expression to use for matching
  * @param terminal The terminal instance
+ * @param matchIndex The index to use from regexp.exec result, default 1
  */
-export const computeLink = (y: number, regex: RegExp, terminal: Terminal) => {
+export const computeLink = (y: number, regex: RegExp, terminal: Terminal, matchIndex = 1) => {
   const rex = new RegExp(
     regex.source,
     ((regex.flags || '') + 'g')
@@ -51,7 +54,7 @@ export const computeLink = (y: number, regex: RegExp, terminal: Terminal) => {
   const result: Pick<ILink, 'range' | 'text'>[] = [];
 
   while ((match = rex.exec(line)) !== null) {
-    const text = match[1];
+    const text = match[matchIndex];
     if (!text) {
       // something matched but does not comply with the given matchIndex
       // since this is most likely a bug the regex itself we simply do nothing here
