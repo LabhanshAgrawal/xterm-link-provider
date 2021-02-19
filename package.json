@@ -4,6 +4,7 @@
   "description": "Create a link provider for xterm.js using regex",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
+  "types": "./lib/cjs/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\"",
     "compile": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json",
