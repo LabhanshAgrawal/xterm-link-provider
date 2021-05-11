@@ -7,7 +7,7 @@ typescript@4.2.4:
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.2.4.tgz#8610b59747de028fda898a8aef0e103f156d0961"
   integrity sha512-V+evlYHZnQkaz8TRBuxTA92yZBPotr5H+WhQ7bD3hZUndx5tGOa1fuCgeSjxAzM1RiN5IzvadIXTVefuuwZCRg==
 
-xterm@^4.11.0:
-  version "4.11.0"
-  resolved "https://registry.yarnpkg.com/xterm/-/xterm-4.11.0.tgz#d7dabc7af5299579e4663fedf2b3a179af9aaff9"
-  integrity sha512-NeJH909WTO2vth/ZlC0gkP3AGzupbvVHVlmtrpBw56/sGFXaF9bNdKgqKa3tf8qbGvXMzL2JhCcHVklqFztIRw==
+xterm@^4.12.0:
+  version "4.12.0"
+  resolved "https://registry.yarnpkg.com/xterm/-/xterm-4.12.0.tgz#db09b425b4dcae5b96f8cbbaaa93b3bc60997ca9"
+  integrity sha512-K5mF/p3txUV18mjiZFlElagoHFpqXrm5OYHeoymeXSu8GG/nMaOO/+NRcNCwfdjzAbdQ5VLF32hEHiWWKKm0bw==
