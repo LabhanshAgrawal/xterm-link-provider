@@ -34,7 +34,7 @@
   },
   "homepage": "https://github.com/LabhanshAgrawal/xterm-link-provider#readme",
   "dependencies": {
-    "xterm": "^4.11.0"
+    "xterm": "^4.13.0"
   },
   "devDependencies": {
     "typescript": "4.2.4"
