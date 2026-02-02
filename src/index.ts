@@ -1,4 +1,4 @@
-import type {IBufferCellPosition, ILink, ILinkProvider, Terminal} from 'xterm';
+import type {IBufferCellPosition, ILink, ILinkProvider, Terminal} from '@xterm/xterm';
 
 type ILinkProviderOptions = Omit<ILink, 'range' | 'text' | 'activate'>;
 

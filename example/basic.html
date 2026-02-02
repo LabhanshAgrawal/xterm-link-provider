@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>xterm-link-provider Example</title>
+  <link rel="stylesheet" href="../node_modules/@xterm/xterm/css/xterm.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    #terminal {
+      height: 400px;
+      border: 1px solid #ccc;
+    }
+    h1 {
+      margin-top: 0;
+    }
+    .info {
+      margin: 20px 0;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>xterm-link-provider Example</h1>
+  <div class="info">
+    <p>This example demonstrates the xterm-link-provider with @xterm/xterm 6.0.0</p>
+    <p><strong>Click inside the terminal below to start typing!</strong></p>
+    <p>Try typing or pasting text with emojis - they will be clickable! 🎉 😀 🚀</p>
+  </div>
+  <div id="terminal"></div>
+  <div class="info">
+    <strong>Instructions:</strong>
+    <ul>
+      <li>Click in the terminal to focus it</li>
+      <li><strong>Click existing emojis and URLs</strong> in the terminal above (they're already links!)</li>
+      <li>Type emojis or URLs, then <strong>press ENTER</strong> - they become clickable on the completed line</li>
+      <li>Example: Type <code>Check out https://github.com 🚀</code> and press Enter, then hover over that line</li>
+      <li>Check the browser console (F12) to see click events</li>
+    </ul>
+    <p><strong>Note:</strong> The demo detects emojis, URLs (http/https), and file paths (~/path, ./path, /path, or files with extensions).</p>
+  </div>
+
+  <script type="module">
+    import { Terminal } from '../node_modules/@xterm/xterm/lib/xterm.mjs';
+    import { LinkProvider } from '../lib/esm/index.js';
+
+    // Create terminal
+    const terminal = new Terminal({
+      cursorBlink: true,
+      theme: {
+        background: '#1e1e1e',
+        foreground: '#d4d4d4'
+      }
+    });
+
+    terminal.open(document.getElementById('terminal'));
+    terminal.writeln('xterm-link-provider example with @xterm/xterm 6.0.0');
+    terminal.writeln('');
+    terminal.writeln('Click in this terminal to focus it, then type!');
+    terminal.writeln('');
+    terminal.writeln('These emojis are clickable (try clicking them):');
+    terminal.writeln('🎉 😀 🚀 ❤️ 🎨 🔥 ✨ 🌟');
+    terminal.writeln('');
+    terminal.writeln('This URL is clickable: https://github.com/xtermjs/xterm.js');
+    terminal.writeln('This path is clickable: ~/.ssh/config or ./src/index.ts');
+    terminal.writeln('');
+    terminal.writeln('Type text with emojis, URLs, or file paths and press ENTER!');
+    terminal.writeln('');
+    terminal.write('$ ');
+
+    // Focus terminal on click
+    document.getElementById('terminal').addEventListener('click', () => {
+      terminal.focus();
+    });
+
+    // Auto-focus terminal after a moment
+    setTimeout(() => terminal.focus(), 100);
+
+    // Register emoji link provider
+    const emojiRegex = /(\p{Emoji_Presentation}+)/gu;
+
+    terminal.registerLinkProvider(
+      new LinkProvider(
+        terminal,
+        emojiRegex,
+        (e, text) => {
+          console.log('Emoji clicked:', text);
+          terminal.writeln('');
+          terminal.writeln(`You clicked: ${text}`);
+          terminal.write('$ ');
+        }
+      )
+    );
+
+    // Enable keyboard input with basic handling
+    let currentLine = '';
+    terminal.onData(data => {
+      // Handle special keys
+      if (data === '\r') { // Enter key
+        terminal.writeln('');
+        currentLine = '';
+        terminal.write('$ ');
+      } else if (data === '\x7F') { // Backspace
+        if (currentLine.length > 0) {
+          currentLine = currentLine.slice(0, -1);
+          terminal.write('\b \b');
+        }
+      } else if (data === '\x03') { // Ctrl+C
+        terminal.writeln('^C');
+        currentLine = '';
+        terminal.write('$ ');
+      } else {
+        currentLine += data;
+        terminal.write(data);
+      }
+    });
+
+    // Add URL link provider
+    const urlRegex = /(https?:\/\/[a-zA-Z0-9-._~:/?#[\]@!$&'()*+,;=%]+)/g;
+    terminal.registerLinkProvider(
+      new LinkProvider(
+        terminal,
+        urlRegex,
+        (e, text) => {
+          console.log('URL clicked:', text);
+          window.open(text, '_blank');
+        },
+        {
+          hover: (e, text) => {
+            e.target.style.cursor = 'pointer';
+          },
+          leave: (e, text) => {
+            e.target.style.cursor = 'default';
+          }
+        }
+      )
+    );
+
+    // Add file path link provider
+    // Matches: /absolute/path, ~/home/path, ./relative, ../parent, or paths with extensions
+    const pathRegex = /((?:~\/|\.\.?\/|\/)[^\s:]+|[^\s\/]+\.[a-zA-Z0-9]+(?:\/[^\s]*)?)/g;
+    terminal.registerLinkProvider(
+      new LinkProvider(
+        terminal,
+        pathRegex,
+        (e, text) => {
+          console.log('Path clicked:', text);
+          terminal.writeln('');
+          terminal.writeln(`Path: ${text}`);
+          terminal.write('$ ');
+        },
+        {
+          hover: (e, text) => {
+            e.target.style.cursor = 'pointer';
+          },
+          leave: (e, text) => {
+            e.target.style.cursor = 'default';
+          }
+        }
+      )
+    );
+  </script>
+</body>
+</html>
