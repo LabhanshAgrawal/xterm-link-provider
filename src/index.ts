@@ -67,20 +67,41 @@ export const computeLink = (y: number, regex: RegExp, terminal: Terminal, matchI
     // of the match group in text again
     // also correct regex and string search offsets for the next loop run
     stringIndex = line.indexOf(text, stringIndex + 1);
+
+    // correct index for emoji support (double characters)
+    const surrogatePairs =
+      line.substring(0, stringIndex).length - [...line.substring(0, stringIndex)].length;
+    stringIndex -= surrogatePairs;
+
     rex.lastIndex = stringIndex + text.length;
     if (stringIndex < 0) {
       // invalid stringIndex (should not have happened)
       break;
     }
 
+    let endX = stringIndex + text.length;
+    let endY = startLineIndex + 1;
+    while (endX > terminal.cols) {
+      endX -= terminal.cols;
+      endY++;
+    }
+
+    let startX = stringIndex + 1;
+    let startY = startLineIndex + 1;
+    while (startX > terminal.cols) {
+      startX -= terminal.cols;
+      startY++;
+    }
+
     const range = {
-      start: stringIndexToBufferPosition(terminal, startLineIndex, stringIndex),
-      end: stringIndexToBufferPosition(
-        terminal,
-        startLineIndex,
-        stringIndex + text.length - 1,
-        true
-      )
+      start: {
+        x: startX,
+        y: startY
+      },
+      end: {
+        x: endX,
+        y: endY
+      }
     };
 
     result.push({range, text});
@@ -119,35 +140,9 @@ const translateBufferLineToStringWithWrap = (
     if (!line) {
       break;
     }
-    lineString += line.translateToString(true).substring(0, terminal.cols);
+    lineString += line.translateToString(true);
     lineIndex++;
   } while (lineWrapsToNext);
 
   return [lineString, startLineIndex];
-};
-
-const stringIndexToBufferPosition = (
-  terminal: Terminal,
-  lineIndex: number,
-  stringIndex: number,
-  reportLastCell = false
-): IBufferCellPosition => {
-  const cell = terminal.buffer.active.getNullCell();
-  while (stringIndex) {
-    const line = terminal.buffer.active.getLine(lineIndex);
-    if (!line) {
-      return {x: 0, y: 0};
-    }
-    const length = line.length;
-    for (let i = 0; i < length; ) {
-      line.getCell(i, cell);
-      stringIndex -= cell.getChars().length;
-      if (stringIndex < 0) {
-        return {x: i + (reportLastCell ? cell.getWidth() : 1), y: lineIndex + 1};
-      }
-      i += cell.getWidth();
-    }
-    lineIndex++;
-  }
-  return {x: 1, y: lineIndex + 1};
 };
