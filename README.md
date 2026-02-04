@@ -8,13 +8,16 @@ Create a [Link Provider](https://github.com/xtermjs/xterm.js/blob/a73fe62b7aedcd
 ## Install
 
 ```
-$ npm install --save xterm-link-provider
+$ npm install --save xterm-link-provider @xterm/xterm
 ```
+
+**Note:** Version 2.0.0+ requires `@xterm/xterm` ^6.0.0. For older versions of xterm.js (4.x), use xterm-link-provider 1.x.
 
 ## Usage
 
 ```js
 import {LinkProvider} from 'xterm-link-provider';
+import {Terminal} from '@xterm/xterm';
 
 // print clicked emojis to console
 
@@ -30,3 +33,8 @@ terminal.registerLinkProvider(
   )
 )
 ```
+
+## Version Compatibility
+
+- **v2.x**: Compatible with `@xterm/xterm` ^6.0.0
+- **v1.x**: Compatible with `xterm` ^4.11.0
